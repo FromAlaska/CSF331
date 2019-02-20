@@ -156,6 +156,8 @@ function lexit.lex(program)
     local lexstr    -- The lexeme, so far
     local category  -- Category of lexeme, set when state set to DONE
     local handlers  -- Dispatch table; value created later
+    local previousCat 
+    local previousLex
 
     -- ***** States *****
 
@@ -273,18 +275,12 @@ function lexit.lex(program)
         elseif ch == "-" then
             add1()
             state = MINUS
-        elseif ch == "." then
-            add1()
-            state = DOT
-            category = lexit.PUNCT
-        elseif ch == "'" or ch == "\"" then
+        elseif ch == "'" or ch == '"' then
             state = STRLIT
-        elseif ch == "=" or ch =="!" or ch == ">" or
-            ch == "<" then 
+        elseif ch == "=" or ch =="!" or ch == ">" or ch == "<" then 
             add1()
             state = OPERATOR
-        elseif ch == "/" or ch == "%" or ch == "[" or ch == "]" or ch =="*"
-        or ch ==";" then
+        elseif ch == "/" or ch == "%" or ch == "[" or ch == "]" or ch == "*" then
             add1()
             state = DONE
             category = lexit.OP
@@ -328,7 +324,6 @@ function lexit.lex(program)
                 add1()
                 state = EXP
             elseif nextChar() == "-" and isDigit(nextNextChar()) then
-                drop1()
                 state = DONE
                 category = lexit.NUMLIT
             else
@@ -344,6 +339,7 @@ function lexit.lex(program)
     local function handle_EXP()
         if isDigit(ch) then
             add1()
+            state = EXP
         else
             state = DONE
             category = lexit.NUMLIT
@@ -446,6 +442,8 @@ function lexit.lex(program)
         while state ~= DONE do
             ch = currChar()
             handlers[state]()
+            previousCat = category
+            previousLex = lexstr
         end
 
         skipWhitespace()
