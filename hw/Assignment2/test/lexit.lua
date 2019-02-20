@@ -1,16 +1,20 @@
--- Jim Samson
--- 13 February 2019
 -- lexit.lua
+-- Jim Samson
+-- 2/18/2019
+-- Modified code from Dr. Glenn Chappell's lexer.lua
+
+-- based on
+-- lexer.lua
 -- VERSION 3
--- Code by Glenn G. Chappell
+-- Glenn G. Chappell
 -- Started: 6 Feb 2019
 -- Updated: 8 Feb 2019
 --
 -- For CS F331 / CSCE A331 Spring 2019
--- In-Class lexit Module
+-- In-Class Lexer Module
 
 -- History:
---   v1. Framework written. lexit treats every character as punctuation.
+--   v1. Framework written. Lexer treats every character as punctuation.
 --   v2. Add states LETTER, DIGIT, DIGDOT, with handlers. Write
 --       skipWhitespace. Add utility function nextChar.
 --   v3. Finished (hopefully). Add states DOT, PLUS, MINUS, STAR.
@@ -18,10 +22,10 @@
 -- Usage:
 --
 --    program = "print a+b;"  -- program to lex
---    for lexstr, cat in lexit.lex(program) do
+--    for lexstr, cat in lexer.lex(program) do
 --        -- lexstr is the string form of a lexeme.
 --        -- cat is a number representing the lexeme category.
---        --  It can be used as an index for array lexit.catnames
+--        --  It can be used as an index for array lexer.catnames
 --    end
 
 
@@ -33,20 +37,19 @@
 local lexit = {}  -- Our module; members are added below
 
 
-
 -- *********************************************************************
 -- Public Constants
 -- *********************************************************************
 
 
 -- Numeric constants representing lexeme categories
-lexit.KEY    = 1 -- Keyword
-lexit.ID     = 2 -- Identifier
-lexit.NUMLIT = 3 -- Numeric Literal
-lexit.STRLIT = 4 -- String Literal
-lexit.OP     = 5 -- Operator
-lexit.PUNCT  = 6 -- Punctuation
-lexit.MAL    = 7 -- Malformed
+lexit.KEY = 1
+lexit.ID = 2
+lexit.NUMLIT = 3
+lexit.STRLIT = 4
+lexit.OP = 5
+lexit.PUNCT = 6
+lexit.MAL = 7
 
 
 -- catnames
@@ -60,6 +63,7 @@ lexit.catnames = {
     "Operator",
     "Punctuation",
     "Malformed"
+    
 }
 
 
@@ -128,8 +132,9 @@ local function isIllegal(c)
 end
 
 
+
 -- *********************************************************************
--- The lexit
+-- The Lexer
 -- *********************************************************************
 
 
@@ -154,19 +159,18 @@ function lexit.lex(program)
 
     -- ***** States *****
 
-    local DONE   = 0
-    local START  = 1
+    local DONE = 0
+    local START = 1
     local LETTER = 2
-    local DIGIT  = 3
-    local DIGDOT = 4
-    local DOT    = 5
-    local PLUS   = 6
-    local MINUS  = 7
-    local STAR   = 8
-    local STRLIT = 9
-    local DBLOPERATOR = 10
-    local OPERATOR = 11
-
+    local DIGIT = 3
+    local EXP = 4
+    local PLUS = 5
+    local MINUS = 6
+    local STAR = 7
+    local STRLIT = 8
+    local DOT = 9
+    local OPERATOR = 10
+    local DBLOPERATOR = 11
 
     -- ***** Character-Related Utility Functions *****
 
@@ -174,6 +178,18 @@ function lexit.lex(program)
     -- Return the current character, at index pos in program. Return
     -- value is a single-character string, or the empty string if pos is
     -- past the end.
+
+    -- Maximal Munch function
+    local function maxMunch()
+        return previousCat == lexit.ID
+        or previousCat == lexit.NUMLIT
+        or previousLex == ")"
+        or previousLex == "]"
+        or previousLex == "true"
+        or previousLex == "false"
+    end
+
+    
     local function currChar()
         return program:sub(pos, pos)
     end
@@ -186,8 +202,8 @@ function lexit.lex(program)
         return program:sub(pos+1, pos+1)
     end
 
-    local function nextPlusTwoChar()
-        return program:sub(pos+2, pos+2)
+    local function nextNextChar()
+    	return program:sub(pos+2, pos+2)
     end
 
     -- drop1
@@ -208,7 +224,7 @@ function lexit.lex(program)
     -- Skip whitespace and comments, moving pos to the beginning of
     -- the next lexeme, or to program:len()+1.
     local function skipWhitespace()
-        while true do      -- In whitespace
+        while true do
             while isWhitespace(currChar()) do
                 drop1()
             end
@@ -218,7 +234,7 @@ function lexit.lex(program)
             end
             drop1()
 
-            while true do  -- In comment
+            while true do
                 if currChar() == "\n" then
                     drop1()
                     break
@@ -251,34 +267,35 @@ function lexit.lex(program)
         elseif isDigit(ch) then
             add1()
             state = DIGIT
-        elseif ch == "." then
-            add1()
-            state = DOT
-            category = lexit.PUNCT
         elseif ch == "+" then
             add1()
             state = PLUS
         elseif ch == "-" then
             add1()
             state = MINUS
-        elseif ch == "%" or ch == "[" or ch == "]" or ch == "%" or ch == "*" or ch == "/" or ch == ";" then
+        elseif ch == "." then
+            add1()
+            state = DOT
+            category = lexit.PUNCT
+        elseif ch == "'" or ch == "\"" then
+            state = STRLIT
+        elseif ch == "=" or ch =="!" or ch == ">" or
+            ch == "<" then 
+            add1()
+            state = OPERATOR
+        elseif ch == "/" or ch == "%" or ch == "[" or ch == "]" or ch =="*"
+        or ch ==";" then
             add1()
             state = DONE
             category = lexit.OP
-        elseif ch == "'" or ch == "\"" then
-            state = STRLIT
-        elseif ch == "=" or ch =="!" or ch == ">" or ch == "<" then 
-            add1()
-            tate = OPERATOR
         elseif ch == "&" or ch == "|" then
             add1()
             state = DBLOPERATOR
-            category = lexit.OP
-        else
+        else 
             add1()
             state = DONE
             category = lexit.PUNCT
-        end
+        end 
     end
 
     local function handle_LETTER()
@@ -286,12 +303,12 @@ function lexit.lex(program)
             add1()
         else
             state = DONE
-            if  lexstr == "cr"          or lexstr == "else"
-                or lexstr == "elseif"   or lexstr == "end"
-                or lexstr == "false"    or lexstr == "if"
-            	or lexstr == "readnum"  or lexstr == "return"
-                or lexstr == "true"     or lexstr == "while"
-                or lexstr == "write"    or lexstr == "def" then
+            if     lexstr == "readnum"  or lexstr == "cr"    
+            	or lexstr == "else"  or lexstr == "elseif"    
+            	or lexstr == "end"   or lexstr == "false"
+            	or lexstr == "def"  or lexstr == "if"
+            	or lexstr == "return" or lexstr == "write"
+            	or lexstr == "true"  or lexstr == "while" then
                 category = lexit.KEY
             else
                 category = lexit.ID
@@ -300,22 +317,20 @@ function lexit.lex(program)
     end
 
     local function handle_DIGIT()
-        if isDigit(ch) then
+    	if isDigit(ch) then
             add1()
-        elseif ch == "E" or ch == "e" then
+        elseif ch == "e" or ch == "E" then
             if isDigit(nextChar()) then
+                add1()
+                state = EXP
+            elseif nextChar() == "+" and isDigit(nextNextChar()) then
                 add1()
                 add1()
                 state = EXP
-            elseif nextChar() == "+" then
-                if isDigit(nextPlusTwoChar()) then
-                    add1()
-                    add1()
-                    state = EXP
-                else
-                    state = DONE
-                    category = lexit.NUMLIT
-                end
+            elseif nextChar() == "-" and isDigit(nextNextChar()) then
+                drop1()
+                state = DONE
+                category = lexit.NUMLIT
             else
                 state = DONE
                 category = lexit.NUMLIT
@@ -324,54 +339,19 @@ function lexit.lex(program)
             state = DONE
             category = lexit.NUMLIT
         end
-    end
+	end
 
     local function handle_EXP()
         if isDigit(ch) then
             add1()
-            state = EXP
         else
             state = DONE
             category = lexit.NUMLIT
         end
-    end
-
-
-    local function handle_DIGDOT()
-        if isDigit(ch) then
-            add1()
-        else
-            state = DONE
-            category = lexit.NUMLIT
-        end
-    end
-
-    local function handle_STRLIT()
-    	local start = ch
-    	add1() 
-    	while currChar() ~= start do
-			if currChar() == "" or currChar()=="\n" then
-				add1()
-				state = DONE
-				category = lexit.MAL
-				return
-			end
-
-			add1()
-    	end	
-    	
-    	add1()
-    	state=DONE
-    	category=lexit.STRLIT
-    end
-
-    local function handle_DOT()
-        state = DONE
-        category = lexit.PUNCT
-    end
+	end
 
     local function handle_PLUS()
-        if isDigit(ch) then
+        if isDigit(ch) and not maxMunch() then
             add1()
             state = DIGIT
         else
@@ -380,14 +360,13 @@ function lexit.lex(program)
         end
     end
 
-
     local function handle_MINUS()
-        if isDigit(ch) then
-          add1()
-          state = DIGIT
+        if isDigit(ch) and not maxMunch() then
+            add1()
+            state = DIGIT
         else
-          state = DONE
-          category = lexit.OP
+            state = DONE
+            category = lexit.OP
         end
     end
 
@@ -397,6 +376,17 @@ function lexit.lex(program)
         end
         state = DONE
         category = lexit.OP      
+    end	
+
+    local function handle_DOUBLEOPERATOR()
+        if ch == "&" or ch=="|" then
+            add1()
+            state = DONE
+            category = lexit.OP
+        else
+            state = DONE
+            category = lexit.PUNCT
+        end
     end
 
     local function handle_DOT()
@@ -404,16 +394,25 @@ function lexit.lex(program)
         category = lexit.PUNCT
     end
 
-    local function handle_STAR()  -- Handle * or / or =
-        if ch == "=" then
+    local function handle_STRLIT()
+           local closing = ch
+            add1()
+            while currChar() ~= closing do
+                if currChar() == "" or currChar() == "\n" then
+                    add1()
+                    state = DONE
+                    category = lexit.MAL
+                    return
+                end
+                add1()
+            end
             add1()
             state = DONE
-            category = lexit.OP
-        else
-            state = DONE
-            category = lexit.OP
+            category = lexit.STRLIT
         end
-    end
+    
+            
+            
 
     -- ***** Table of State-Handler Functions *****
 
@@ -422,15 +421,14 @@ function lexit.lex(program)
         [START]=handle_START,
         [LETTER]=handle_LETTER,
         [DIGIT]=handle_DIGIT,
-        [DIGDOT]=handle_DIGDOT,
-        [DOT]=handle_DOT,
+        [EXP]=handle_EXP,
         [PLUS]=handle_PLUS,
         [MINUS]=handle_MINUS,
         [STAR]=handle_STAR,
         [STRLIT]=handle_STRLIT,
         [DOT]=handle_DOT,
-        [DBLOPERATOR]=handle_DBLOPERATOR,
-        [OPERATOR]=handle_OPERATOR
+        [OPERATOR]=handle_OPERATOR,
+        [DBLOPERATOR]=handle_DOUBLEOPERATOR
     }
 
     -- ***** Iterator Function *****
@@ -469,4 +467,3 @@ end
 
 
 return lexit
-
