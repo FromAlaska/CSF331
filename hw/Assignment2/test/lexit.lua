@@ -170,7 +170,6 @@ function lexit.lex(program)
     local MINUS = 6
     local STAR = 7
     local STRLIT = 8
-    local DOT = 9
     local OPERATOR = 10
     local DBLOPERATOR = 11
 
@@ -385,30 +384,22 @@ function lexit.lex(program)
         end
     end
 
-    local function handle_DOT()
-        state = DONE
-        category = lexit.PUNCT
-    end
-
     local function handle_STRLIT()
-           local closing = ch
-            add1()
-            while currChar() ~= closing do
-                if currChar() == "" or currChar() == "\n" then
-                    add1()
-                    state = DONE
-                    category = lexit.MAL
-                    return
-                end
+        local closing = ch
+        add1()
+        while currChar() ~= closing do
+            if currChar() == "" or currChar() == "\n" then
                 add1()
+                state = DONE
+                category = lexit.MAL
+                return
             end
             add1()
-            state = DONE
-            category = lexit.STRLIT
         end
-    
-            
-            
+        add1()
+        state = DONE
+        category = lexit.STRLIT
+    end     
 
     -- ***** Table of State-Handler Functions *****
 
@@ -422,7 +413,6 @@ function lexit.lex(program)
         [MINUS]=handle_MINUS,
         [STAR]=handle_STAR,
         [STRLIT]=handle_STRLIT,
-        [DOT]=handle_DOT,
         [OPERATOR]=handle_OPERATOR,
         [DBLOPERATOR]=handle_DOUBLEOPERATOR
     }
