@@ -181,13 +181,14 @@ function lexit.lex(program)
     -- past the end.
 
     -- Maximal Munch function
+    -- Added this to Dr. Chappel's code
     local function maxMunch()
         return previousCat == lexit.ID
         or previousCat == lexit.NUMLIT
-        or previousLex == ")"
-        or previousLex == "]"
         or previousLex == "true"
         or previousLex == "false"
+        or previousLex == ")"
+        or previousLex == "]"
     end
 
     
@@ -203,6 +204,11 @@ function lexit.lex(program)
         return program:sub(pos+1, pos+1)
     end
 
+    -- nextNextChar
+    -- Added this to the code
+    -- Return the next character, at index pos+2 in program. Return
+    -- value is a single-character string, or the empty string if pos+2
+    -- is past the end.
     local function nextNextChar()
     	return program:sub(pos+2, pos+2)
     end
@@ -276,10 +282,12 @@ function lexit.lex(program)
             state = MINUS
         elseif ch == "'" or ch == '"' then
             state = STRLIT
-        elseif ch == "=" or ch =="!" or ch == ">" or ch == "<" then 
+        elseif ch == "=" or ch =="!" 
+            or ch == ">" or ch == "<" then 
             add1()
             state = OPERATOR
-        elseif ch == "/" or ch == "%" or ch == "[" or ch == "]" or ch == "*" then
+        elseif ch == "/" or ch == "%" or ch == "[" 
+            or ch == "]" or ch == "*" then
             add1()
             state = DONE
             category = lexit.OP
@@ -298,7 +306,7 @@ function lexit.lex(program)
             add1()
         else
             state = DONE
-            if     lexstr == "readnum"  or lexstr == "cr"    
+            if  lexstr == "readnum"  or lexstr == "cr"    
             	or lexstr == "else"  or lexstr == "elseif"    
             	or lexstr == "end"   or lexstr == "false"
             	or lexstr == "def"  or lexstr == "if"
@@ -312,19 +320,21 @@ function lexit.lex(program)
     end
 
     local function handle_DIGIT()
-    	if isDigit(ch) then
+        if isDigit(ch) then
             add1()
-        elseif ch == "e" or ch == "E" then
+        elseif ch == "E" or ch == "e" then
             if isDigit(nextChar()) then
                 add1()
                 state = EXP
-            elseif nextChar() == "+" and isDigit(nextNextChar()) then
-                add1()
-                add1()
-                state = EXP
-            elseif nextChar() == "-" and isDigit(nextNextChar()) then
-                state = DONE
-                category = lexit.NUMLIT
+            elseif nextChar() == "+" then
+                if isDigit(nextNextChar()) then
+                    add1()
+                    add1()
+                    state = EXP
+                else
+                    state = DONE
+                    category = lexit.NUMLIT
+                end
             else
                 state = DONE
                 category = lexit.NUMLIT
@@ -333,7 +343,7 @@ function lexit.lex(program)
             state = DONE
             category = lexit.NUMLIT
         end
-	end
+    end
 
     local function handle_EXP()
         if isDigit(ch) then
@@ -432,11 +442,11 @@ function lexit.lex(program)
         while state ~= DONE do
             ch = currChar()
             handlers[state]()
-            previousCat = category
-            previousLex = lexstr
         end
 
         skipWhitespace()
+        previousLex = lexstr
+        previousCat = category
         return lexstr, category
     end
 
