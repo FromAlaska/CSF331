@@ -148,6 +148,10 @@ local parse_program
 local parse_stmt_list
 local parse_statement
 local parse_lvalue
+local parse_call
+local parse_comp_expr
+local parse_arith_expr
+local parse_write_arg
 
 -- parse
 -- Given program, initialize parser and call parsing function for start
@@ -169,8 +173,8 @@ end
 
 -- function parse_program
 function parse_program()
-    local good, ast
-    good, ast = parse_stmt_list()
+	local good, ast
+	good, ast = parse_stmt_list()
     return good, ast
 end
 
@@ -181,8 +185,7 @@ function parse_stmt_list()
 
 	ast = { STMT_LIST }
 	while true do
-		if lexstr ~= "list"
-			and lexstr ~= "write"
+		if lexstr ~= "write"
 			and lexstr ~= "def"
 			and lexstr ~= "if"
 			and lexstr ~= "while"
@@ -208,7 +211,7 @@ function parse_statement()
 
     
 -- Handle Input statements
-	if matchString("list") then
+	if matchString("input") then
 		good, ast = parse_lvalue()
 		return good, { STMT_LIST, ast }
 
@@ -233,21 +236,21 @@ function parse_statement()
 		good, ast = parse_call()
 		return good, ast
 
--- Handle Print Statements
-	elseif matchString("print") then
-		good, ast = parse_print_arg()
+-- Handle write Statements
+	elseif matchString("write") then
+		good, ast = parse_write_arg()
         if not good then
             return false, nil
         end
 
-        ast2 = { PRINT_STMT, ast }
+        ast2 = { WRITE_STMT, ast }
 
         while true do
             if not matchString(";") then
                 break
 			end
 
-            good, ast = parse_print_arg()
+            good, ast = parse_write_arg()
             if not good then
                 return false, nil
             end
@@ -339,13 +342,13 @@ function parse_lvalue()
 		ast = { SIMPLE_VAR, lexstr }
 		good = true
 		advance()
-		if match_string('[') then
+		if match_string('(') then
 			local good, ast2 = parse_expr()
 			if not good then
 				return false, nil
 			end
 			ast = { ARRAY_VAR, ast[2], ast2 }
-			if not match_string(']') then
+			if not match_string(')') then
 				return false, nil
 			end
 		end
@@ -393,6 +396,81 @@ function parse_expr()
 	return good, ast
 end
 
+function parse_comp_expr()
+	local good, ast, ast2, ast3
+	if matchString('!') then
+		good, ast = parse_comp_expr()
+        if not good then
+            return false, nil
+        end
+		ast = { { UN_OP, "!" }, ast}
+		return true, ast
+	end
+	good, ast = parse_arith_expr()
+	if not good then
+		return false, nil
+	end
+
+	while true do
+		local savelex = lexstr
+		if not matchString("==") 
+		and not matchString("!=")
+		and not matchString("<")
+		and not matchString("<=")
+		and not matchString(">")
+		and not matchString(">=") then
+			return good, ast
+		else
+			good, ast2 = parse_arith_expr()
+			if not good then
+				return false, nil
+			end
+			ast = { { BIN_OP, savelex }, ast, ast2 }
+		end
+	end
+	return good, ast
+end
+
+function parse_arith_expr()
+	local good, ast, ast2, savelex
+	good, ast = parse_term()
+	if not good then
+		return false, nil
+	end
+	while true do
+		savelex = lexstr
+		if not matchString('+') and not matchString('-') then
+			break
+		end
+		
+		good, ast2 = parse_term()
+		if not good then
+			return false, nil
+		end
+		ast = { { BIN_OP, savelex }, ast, ast2 }
+	end
+	return true, ast
+end
+
+function parse_write_arg()
+	local good, ast
+	if matchString('cr') then
+		ast = { CR_OUT }
+		good = true
+	elseif matchCat(lexit.STRLIT) then
+		ast = { STRLIT_OUT, lexstr }
+		advance()
+		good = true
+	else
+		good, ast = parse_expr()
+		if not good then
+			return false, nil
+		end
+		-- advance()
+		good = true
+	end
+	return good, ast
+end
 
 -- parse_term
 -- Parsing function for nonterminal "term".
