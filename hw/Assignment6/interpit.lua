@@ -286,30 +286,6 @@ function interpit.interp(ast, state, incall, outcall)
         end
     end
 
-    local function processLValue(ast)
-        local name, value, index
-        if(ast[2][1] == SIMPLE_VAR) then
-            name = ast[2][2]
-            value = eval_expr(ast[3])
-            state.v[name] = numToInt(value)
-            print(value)
-        end
-    
-        if(ast[2][1] == ARRAY_VAR) then
-            name = ast[2][2]
-            index = eval_expr(ast[2][3])
-            value = eval_expr(ast[3])
-            --print(name)
-            numToInt(index)
-            --print(numToInt(value))
-            if (state.a[name] == nil) then 
-                state.a[name] = {}
-            end
-            state.a[name][numToInt(index)]= numToInt(value)
-        end
-            
-    end 
-
 
     function interp_stmt_list(ast)
         assert(ast[1] == STMT_LIST, "stmt list AST must start w/ STMT_LIST")
@@ -364,9 +340,13 @@ function interpit.interp(ast, state, incall, outcall)
         elseif (ast[1] == RETURN_STMT) then
             print("RETURN-stmt; DUNNO WHAT TO DO!!!")
         elseif (ast[1] == ASSN_STMT) then
-            assert(ast[1] == ASSN_STMT)
-            print(astToStr(ast))
-            processLValue(ast)
+            local rhs = eval_expr(ast[3])
+            if ast[2][1] == SIMPLE_VAR then
+                state.v[ast[2][2]] = rhs 
+            else
+                local index = eval_expr(ast[2][3])
+                state.a[ast[2][2]][index] = rhs    
+            end    
         else
             print("End here?")
             assert(false, "Illegal statement")
