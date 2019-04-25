@@ -191,24 +191,23 @@ function interpit.interp(ast, state, incall, outcall)
         if(ast[1] == NUMLIT_VAL) then
             value = strToNum(ast[2])
 
-        end
-        if(ast[1] == BOOLLIT_VAL) then
+        elseif(ast[1] == BOOLLIT_VAL) then
             value = boolToInt(strToBool(ast[2]))
-        end
 
-        if (ast[1] == SIMPLE_VAR) then
-           value = state.v[ast[2]]
-        end
-
-        if(ast[1] == ARRAY_VAR) then
+        elseif (ast[1] == SIMPLE_VAR) then
+            value = state.v[ast[2]]
+       
+        elseif(ast[1] == ARRAY_VAR) then
             if(state.a[ast[2]]==nil) then
                 value = 0
             else
-            value = state.a[ast[2]][eval_expr(ast[3])]
+                value = state.a[ast[2]][eval_expr(ast[3])]
             end
-        end
 
-        if(type(ast[1]) == "table") then   
+        elseif(ast[1] == READNUM_CALL) then
+            value = strToNum(incall())
+
+        elseif(type(ast[1]) == "table") then   
             if(ast[1][1] == UN_OP) then 
                 if(ast[1][2] == "+") then
                     value = eval_expr(ast[2])  
@@ -309,10 +308,12 @@ function interpit.interp(ast, state, incall, outcall)
                     outcall(numToStr(value))
                 end
             end
+
         elseif (ast[1] == FUNC_DEF) then
             local name = ast[2]
             local body = ast[3]
             state.f[name] = body
+
         elseif (ast[1] == FUNC_CALL) then
             local name = ast[2]
             local body = state.f[name]
@@ -320,6 +321,7 @@ function interpit.interp(ast, state, incall, outcall)
                 body = { STMT_LIST }  -- Default AST
             end
             interp_stmt_list(body)
+
         elseif (ast[1] == IF_STMT) then
             local passed = false
             local counter = 2
@@ -333,20 +335,24 @@ function interpit.interp(ast, state, incall, outcall)
             if not passed and type(ast[counter+2]) == "table" then
                 interp_stmt_list(ast[counter+2])
             end
+            
         elseif (ast[1] == WHILE_STMT) then
             while eval_expr(ast[2]) ~= 0 do
                 interp_stmt_list(ast[3])
             end
+
         elseif (ast[1] == RETURN_STMT) then
             print("RETURN-stmt; DUNNO WHAT TO DO!!!")
+
         elseif (ast[1] == ASSN_STMT) then
             local rhs = eval_expr(ast[3])
             if ast[2][1] == SIMPLE_VAR then
                 state.v[ast[2][2]] = rhs 
             else
-                local index = eval_expr(ast[2][3])
-                state.a[ast[2][2]][index] = rhs    
-            end    
+                local lhs = eval_expr(ast[2][3])
+                state.a[ast[2][2]][lhs] = rhs    
+            end
+
         else
             print("End here?")
             assert(false, "Illegal statement")
