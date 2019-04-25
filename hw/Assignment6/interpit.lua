@@ -198,11 +198,17 @@ function interpit.interp(ast, state, incall, outcall)
             value = state.v[ast[2]]
        
         elseif(ast[1] == ARRAY_VAR) then
-            if(state.a[ast[2]]==nil) then
-                value = 0
+            local index = eval_expr(ast[3])
+            if (state.a[ast[2]] == nil) then
+                value = 0 
             else
-                value = state.a[ast[2]][eval_expr(ast[3])]
+                value = state.a[ast[2]][index]
             end
+            -- if(state.a[ast[2]]==nil) then
+            --     value = 0
+            -- else
+            --     value = state.a[ast[2][2]][eval_expr(ast[3])]
+            -- end
 
         elseif(ast[1] == READNUM_CALL) then
             value = strToNum(incall())
@@ -350,6 +356,9 @@ function interpit.interp(ast, state, incall, outcall)
                 state.v[ast[2][2]] = rhs 
             else
                 local lhs = eval_expr(ast[2][3])
+                if (state.a[ast[2][2]] == nil) then
+                    state.a[ast[2][2]] = {}
+                end
                 state.a[ast[2][2]][lhs] = rhs    
             end
 
