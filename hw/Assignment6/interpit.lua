@@ -1,7 +1,7 @@
 -- interpit.lua
 -- Jim Samson
 -- 7 Apr 2019
---
+-- Homework 6 Assignment
 
 
 -- Most code written by Dr. Glenn Chappell
@@ -204,6 +204,13 @@ function interpit.interp(ast, state, incall, outcall)
             else
                 value = state.a[ast[2]][index]
             end
+        elseif (ast[1] == FUNC_CALL) then
+            local statements = state.f[ast[2]]
+            if (statements == nil) then
+                statements = {STMT_LIST}
+            end
+            interp_stmt_list(statements)
+            value = state.v["return"]
             
         elseif(ast[1] == READNUM_CALL) then
             value = strToNum(incall())
@@ -298,7 +305,6 @@ function interpit.interp(ast, state, incall, outcall)
     function interp_stmt(ast)
         if (ast[1] == WRITE_STMT) then
             for i = 2, #ast do
-                assert(type(ast[i]) == "table", "print arg must be table")
                 if ast[i][1] == CR_OUT then
                     outcall("\n")
                 elseif ast[i][1] == STRLIT_OUT then
@@ -322,6 +328,7 @@ function interpit.interp(ast, state, incall, outcall)
                 body = { STMT_LIST }  -- Default AST
             end
             interp_stmt_list(body)
+            value = state.v["return"]
 
         elseif (ast[1] == IF_STMT) then
             local passed = false
@@ -368,10 +375,5 @@ function interpit.interp(ast, state, incall, outcall)
     interp_stmt_list(ast)
     return state
 end
-
-
--- ***** Module Export *****
-
-
 return interpit
 
