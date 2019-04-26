@@ -1,12 +1,9 @@
---Samuel Grenon
---CS 331
---26 Mar 2018
---median.hs This program takes input from a user
---and returns a median of the numbers
+-- Jim Samson
+-- CS 331 Assignment 5
+-- 25 April 2019
 
 import Data.List
 import System.IO
-
 
 -- main loop
 main = do

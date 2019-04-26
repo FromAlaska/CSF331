@@ -1,8 +1,7 @@
--- PA5.hs  
--- Samuel J Grenon
--- 26 Mar 2018
---
--- For CS F331 / CSCE A331 Spring 2018
+-- PA5.hs
+-- Jim Samson
+-- 
+-- For CS F331 / CSCE A331 Spring 2019
 -- Solutions to Assignment 5 Exercise B
 
 module PA5 where
