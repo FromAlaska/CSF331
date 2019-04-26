@@ -1,34 +1,42 @@
+-- median.hs
 -- Jim Samson
 -- CS 331 Assignment 5
 -- 25 April 2019
 
+-- For CSF331 Spring 2019
+-- Assignment 5 Part C
+
+module Main where
+
 import Data.List
 import System.IO
+import System.Exit
 
--- main loop
+-- Main Loop
 main = do
-    putStrLn "Enter a list of numbers use a blank line to exit"
+    putStrLn "Enter a set of integers, one on each line."
+    putStrLn "This program will compute the median of the list"
     value <- median
     hFlush stdout
+
     if value == 9999999999
         then
             putStrLn ("You made an empty list")
         else do
-            putStr ("The median is ")
+            putStr ("The median is: ")
             print (value)
             
     hFlush stdout
     
-    putStrLn "Do you want to play again [y/n]"
+    putStrLn "Continue? [y/n]:"
     startOver <- getLine
     if startOver == "y"
         then do
             main
         else do
-            putStrLn "Bye"
+            exitSuccess
         
--- Pre None
--- Post Returns a list of Integers typed by the user
+-- Returns a list of integers typed by the user
 getList = do	
     input <- getLine
     if input == "" 
@@ -39,19 +47,17 @@ getList = do
             next <- getList
             return (n:next)
 
---Pre None
---Post Returns the median of the number
+-- Post Returns the median of the number
 median = do
     n <- getList
     if length n == 0
         then
             return 9999999999
-            --error ("Empty List") -- Exit with error message
         else do 
             sortedList <- sortList (n)
             lengthList <- return (length sortedList)
-            midList <- return (div lengthList 2)
-            return (sortedList !! midList)
+            middle <- return (div lengthList 2)
+            return (sortedList !! middle)
 
 
 sortList list = do
