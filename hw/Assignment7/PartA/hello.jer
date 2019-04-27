@@ -1,0 +1,11 @@
+#!./jerboa.lua
+# hello.jer
+# Glenn G. Chappell
+# 12 Apr 2019
+#
+# For CS F331 / CSCE A331 Spring 2019
+# Jerboa Example: Hello World
+
+
+write("Hello, world!", cr)
+
